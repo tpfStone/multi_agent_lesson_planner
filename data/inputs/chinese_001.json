@@ -1,0 +1,12 @@
+{
+  "task_id": "chinese_001",
+  "subject": "语文",
+  "grade": "八年级",
+  "topic": "说明文的说明方法",
+  "duration": "45分钟",
+  "requirements": [
+    "包含文本分析和迁移练习",
+    "输出结构化教案"
+  ]
+}
+

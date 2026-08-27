@@ -1,0 +1,9 @@
+# Provider configuration reference only. The Phase 1 runtime does not load this file.
+# Real-provider environment variables are read only by OpenAIModelProvider.from_env().
+default_provider: mock
+providers:
+  mock:
+    model_id: deterministic-script-v1
+  openai:
+    model_id_env: LESSON_MODEL_ID
+    api_key_env: OPENAI_API_KEY

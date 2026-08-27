@@ -1,0 +1,9 @@
+# Reference defaults only. The Phase 1 runtime does not load this file yet.
+config_version: "phase1-v1-reference"
+runs_dir: "runs"
+input_aliases:
+  subject_name: subject
+  grade_level: grade
+  lesson_topic: topic
+generation:
+  temperature: 0.2

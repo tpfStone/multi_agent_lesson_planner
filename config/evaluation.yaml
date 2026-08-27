@@ -1,0 +1,4 @@
+# Phase 2 reserved configuration. It is not loaded by the Phase 1 graph.
+score_threshold: 0.8
+max_iterations: 3
+
