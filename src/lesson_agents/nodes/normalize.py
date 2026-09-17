@@ -52,6 +52,7 @@ def make_normalize_node(
             }
             artifact = context.artifacts.save_json("01_normalized.json", update["task"])
             context.capture(state, update)
+            context.record_normalized_task(update["task"])
             span.finish(status="success", artifact_path=artifact)
             return update
         except Exception as exc:
@@ -60,4 +61,3 @@ def make_normalize_node(
             raise
 
     return normalize_input
-

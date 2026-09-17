@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+from hashlib import sha256
 
 from lesson_agents.core.schemas import LessonDraft, LessonPlan, LessonTask
 from lesson_agents.models.base import ModelProvider, ModelResult
@@ -14,6 +15,7 @@ class FormatterAgent:
     def __init__(self, provider: ModelProvider) -> None:
         self._provider = provider
         self._system_prompt = load_prompt(f"{self.prompt_version}.txt")
+        self.prompt_hash = sha256(self._system_prompt.encode("utf-8")).hexdigest()
 
     def run(self, *, task: LessonTask, draft: LessonDraft) -> ModelResult[LessonPlan]:
         payload = {
@@ -26,4 +28,3 @@ class FormatterAgent:
             schema=LessonPlan,
             temperature=self.temperature,
         )
-

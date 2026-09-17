@@ -58,6 +58,11 @@ class MockModelProvider:
     def configuration_source(self) -> str:
         return "scripted_arguments"
 
+    @property
+    def request_configuration(self) -> dict:
+        return {"source": "scripted_arguments", "network_requests": False,
+                "timeout": None, "max_retries": None, "output_token_limit": None}
+
     def _metadata(self, temperature: float | None) -> ModelMetadata:
         return ModelMetadata(
             provider=self.provider_name,

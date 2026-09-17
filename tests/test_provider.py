@@ -1,4 +1,5 @@
 from types import SimpleNamespace
+import sys
 
 import pytest
 
@@ -172,3 +173,21 @@ def test_deepseek_provider_does_not_relax_pydantic_schema() -> None:
             user_prompt="task",
             schema=LessonTask,
         )
+
+
+@pytest.mark.parametrize("provider_class", [OpenAIModelProvider, DeepSeekModelProvider])
+def test_request_configuration_distinguishes_injected_clients_and_sdk_defaults(monkeypatch, provider_class):
+    calls = []
+
+    def fake_client(**kwargs):
+        calls.append(kwargs)
+        return SimpleNamespace(base_url=kwargs.get("base_url"))
+
+    monkeypatch.setitem(sys.modules, "openai", SimpleNamespace(OpenAI=fake_client))
+    default = provider_class(api_key="not-used", model_id="test-model")
+    injected = provider_class(api_key="not-used", model_id="test-model", client=object())
+    assert len(calls) == 1
+    assert not {"timeout", "max_retries", "max_tokens"} & calls[0].keys()
+    assert default.request_configuration["source"] == "sdk_defaults"
+    assert injected.request_configuration["source"] == "injected_client_configuration"
+    assert default.request_configuration["output_token_limit"]["explicit_in_adapter"] is False

@@ -6,13 +6,13 @@ from lesson_agents.core.schemas import LessonTask
 from lesson_agents.models.mock import MockModelProvider, ScriptedStructuredResponse
 
 
-def build_mock_phase1_provider(
+def _lesson_responses(
     task: LessonTask,
     *,
     invalid_final_duration: bool = False,
     final_task_overrides: dict | None = None,
-) -> MockModelProvider:
-    """Build deterministic domain fixtures for the three Phase 1 agent calls."""
+) -> list[ScriptedStructuredResponse]:
+    """Static fixtures shared by mock scenarios; no agents or pipelines are run."""
 
     objectives = [
         {"category": "知识与技能", "content": f"理解并掌握{task.topic}的核心概念与基本方法"},
@@ -96,10 +96,32 @@ def build_mock_phase1_provider(
         plan["stages"][0]["duration_minutes"] = -1
     if final_task_overrides:
         plan["task"].update(final_task_overrides)
+    return [
+        ScriptedStructuredResponse("LessonOutline", outline),
+        ScriptedStructuredResponse("LessonDraft", draft),
+        ScriptedStructuredResponse("LessonPlan", plan),
+    ]
+
+
+def build_mock_phase1_provider(
+    task: LessonTask, *, invalid_final_duration: bool = False,
+    final_task_overrides: dict | None = None,
+) -> MockModelProvider:
+    """Build a fresh queue for the three baseline agent calls."""
+    return MockModelProvider(structured_responses=_lesson_responses(
+        task, invalid_final_duration=invalid_final_duration,
+        final_task_overrides=final_task_overrides,
+    ))
+
+
+def build_mock_direct_write_provider(
+    task: LessonTask, *, invalid_final_duration: bool = False,
+    final_task_overrides: dict | None = None,
+) -> MockModelProvider:
+    """Replay only Draft and Plan; never execute A or consume its generated output."""
     return MockModelProvider(
-        structured_responses=[
-            ScriptedStructuredResponse("LessonOutline", outline),
-            ScriptedStructuredResponse("LessonDraft", draft),
-            ScriptedStructuredResponse("LessonPlan", plan),
-        ]
+        structured_responses=_lesson_responses(
+            task, invalid_final_duration=invalid_final_duration,
+            final_task_overrides=final_task_overrides,
+        )[1:]
     )

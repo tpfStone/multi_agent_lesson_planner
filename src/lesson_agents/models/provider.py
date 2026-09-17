@@ -47,6 +47,7 @@ class OpenAIModelProvider:
             raise ModelProviderError("OPENAI_API_KEY is required for the real provider")
         if not model_id:
             raise ModelProviderError("LESSON_MODEL_ID is required for the real provider")
+        self._client_injected = client is not None
         if client is None:
             try:
                 from openai import OpenAI
@@ -90,6 +91,17 @@ class OpenAIModelProvider:
     @property
     def base_url(self) -> str | None:
         return self._base_url
+
+    @property
+    def request_configuration(self) -> dict:
+        source = "injected_client_configuration" if self._client_injected else "sdk_defaults"
+        return {
+            "source": source,
+            "timeout": {"source": source, "explicit_in_adapter": False},
+            "max_retries": {"source": source, "explicit_in_adapter": False},
+            "output_token_limit": {"source": "service_default", "explicit_in_adapter": False},
+            "model_id_source": "configured_id; server-resolved version is not captured",
+        }
 
     @staticmethod
     def _usage(response: Any) -> dict[str, int] | None:
@@ -230,6 +242,7 @@ class DeepSeekModelProvider(OpenAIModelProvider):
         client: Any | None = None,
         configuration_source: str = "constructor_arguments",
     ) -> None:
+        client_injected = client is not None
         if client is None:
             try:
                 from openai import OpenAI
@@ -245,6 +258,7 @@ class DeepSeekModelProvider(OpenAIModelProvider):
             configuration_source=configuration_source,
         )
         self._base_url = self.default_base_url
+        self._client_injected = client_injected
 
     @classmethod
     def from_env(

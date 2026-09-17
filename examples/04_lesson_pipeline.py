@@ -6,6 +6,7 @@ import os
 from pathlib import Path
 
 from lesson_agents.app import run_lesson_pipeline
+from lesson_agents.core.constants import PIPELINE_VERSIONS
 from lesson_agents.models.provider import DeepSeekModelProvider, OpenAIModelProvider
 
 
@@ -42,6 +43,8 @@ def main() -> None:
     parser = argparse.ArgumentParser(description="Run the Phase 1 lesson-plan pipeline")
     parser.add_argument("--input", type=Path, required=True)
     parser.add_argument("--runs-dir", type=Path, default=Path("runs"))
+    parser.add_argument("--pipeline", choices=tuple(PIPELINE_VERSIONS), default="outline_then_write")
+    parser.add_argument("--comparison-id", default=None, help="Associate independent comparison runs")
     mode = parser.add_mutually_exclusive_group()
     mode.add_argument("--mock", action="store_true", help="Use deterministic network-free responses")
     mode.add_argument("--real", action="store_true", help="Use OPENAI_API_KEY and LESSON_MODEL_ID")
@@ -49,9 +52,13 @@ def main() -> None:
 
     raw_task = json.loads(args.input.read_text(encoding="utf-8"))
     provider = load_real_provider() if args.real else None
-    result = run_lesson_pipeline(raw_task, provider=provider, runs_dir=args.runs_dir)
+    result = run_lesson_pipeline(
+        raw_task, provider=provider, runs_dir=args.runs_dir,
+        pipeline=args.pipeline, comparison_id=args.comparison_id,
+    )
 
     print(f"run_id: {result.run_id}")
+    print(f"pipeline: {args.pipeline}")
     print(f"status: {result.status}")
     print(f"validation_valid: {result.validation_valid}")
     print(f"run_dir: {result.run_dir}")
