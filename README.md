@@ -95,4 +95,6 @@ final.json
 
 Schema 校验会同时检查详细教学阶段的教师活动、学生活动和评价非空，以及最终 `LessonPlan.task` 与 Normalize 后任务的全部字段一致。校验失败或节点异常时，系统保存 `state.json` 与失败 trace，并停止后续业务处理。失败运行不生成 `final.json`，因此不会把无效结果误认成正式成品。
 
+已解析的 JSON 若顶层不是对象，也会在 Normalize 节点被拒绝，并原样保留在 `input.json` 和失败 State 的 `task` 中；成功 State 的 `task` 仍是标准化后的任务对象。保存节点写入 final、state 或 trace 时若发生可恢复异常，会移除本次残留的 `final.json` 并记录失败。输入文件读取/JSON 语法错误发生在命令行入口，尚不属于 Graph 运行记录；持续无法写入磁盘或进程被强制终止时，也不保证记录完整。
+
 更详细的非技术复现步骤见 `docs/reproduction.md`。

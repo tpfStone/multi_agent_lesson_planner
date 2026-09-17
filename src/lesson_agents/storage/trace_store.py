@@ -46,7 +46,6 @@ class TraceSpan:
     ) -> None:
         if self._finished:
             raise RuntimeError("Trace span already finished")
-        self._finished = True
         ended_at = utc_now()
         latency_ms = round((perf_counter() - self._started_clock) * 1000, 3)
         self._store.append(
@@ -68,6 +67,8 @@ class TraceSpan:
                 "error": error,
             }
         )
+        # Leave the span open on a write error so the node can record failure.
+        self._finished = True
 
 
 class TraceStore:

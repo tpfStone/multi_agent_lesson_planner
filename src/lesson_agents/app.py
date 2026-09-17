@@ -47,7 +47,10 @@ def _new_run_id() -> str:
     return f"{timestamp}_{uuid4().hex[:8]}"
 
 
-def _default_mock_provider(raw_task: Mapping[str, Any], aliases: Mapping[str, str]) -> ModelProvider:
+def _default_mock_provider(raw_task: object, aliases: Mapping[str, str]) -> ModelProvider:
+    if not isinstance(raw_task, Mapping):
+        # Let Normalize reject non-object JSON after run records are initialized.
+        return MockModelProvider()
     try:
         task = LessonTask.model_validate(normalize_task_data(raw_task, aliases))
     except ValidationError:
@@ -102,14 +105,14 @@ def _run_metadata(
 
 
 def run_lesson_pipeline(
-    raw_task: Mapping[str, Any],
+    raw_task: object,
     *,
     provider: ModelProvider | None = None,
     retriever: KnowledgeRetriever | None = None,
     runs_dir: str | Path = "runs",
     aliases: Mapping[str, str] | None = None,
 ) -> PipelineRunResult:
-    """Execute the Phase 1 graph and always return a persisted run result."""
+    """Execute Phase 1 for decoded JSON; Normalize validates the task object."""
 
     effective_aliases = dict(aliases or DEFAULT_ALIASES)
     effective_provider = provider or _default_mock_provider(raw_task, effective_aliases)
@@ -120,8 +123,9 @@ def run_lesson_pipeline(
     runs_path.mkdir(parents=True, exist_ok=True)
     artifacts = ArtifactStore(runs_path / run_id)
     traces = TraceStore(run_id=run_id, path=artifacts.run_dir / "trace.jsonl")
+    raw_input = dict(raw_task) if isinstance(raw_task, Mapping) else raw_task
     initial_state: LessonPlanState = {
-        "task": dict(raw_task),
+        "task": raw_input,
         "run_id": run_id,
         "current_stage": "input_received",
         "errors": [],
@@ -129,7 +133,7 @@ def run_lesson_pipeline(
     }
     context = RunContext(artifacts=artifacts, traces=traces, initial_state=initial_state)
 
-    artifacts.save_json("input.json", dict(raw_task))
+    artifacts.save_json("input.json", raw_input)
     try:
         graph_builder = build_phase1_graph(
             provider=effective_provider,

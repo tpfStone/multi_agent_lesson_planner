@@ -24,9 +24,11 @@ def make_save_node(context: RunContext):
             span.finish(status="failed", artifact_path=state_artifact, error=error)
             return update
         except Exception as exc:
-            span.finish(status="failed", artifact_path=None, error=str(exc))
+            # A final artifact is only official once state and trace are saved too.
+            # This also removes a partially written final after a write error.
+            (context.artifacts.run_dir / "final.json").unlink(missing_ok=True)
             context.persist_failure(state, node="save", error=exc)
+            span.finish(status="failed", artifact_path=None, error=str(exc))
             raise
 
     return save
-
